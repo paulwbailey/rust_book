@@ -27,7 +27,7 @@
     ```rust
     let number = if x = 5  { "equals" } else { "not equals" };
     ```
-- String literal vs String: A string literal is a known value is hardcoded into program. It is immutable A String is a variable type like other languages. It can be mutable. String literals are saved in the stack and are faster.
+- String literal vs String: A string literal is a known value that is hardcoded into program. It is immutable. A String is a variable type like other languages. It can be mutable. String literals are saved in the stack and are faster.
     ```rust
     let string_literal = "hello"
     let mut string = String::from("hello")
@@ -381,5 +381,158 @@ let mut count = 0;
 match coin {
     Coin::Quarter(state) => println!("State quarter from {:?}!", state),
     _ => count += 1,
+}
+```
+
+### Collections
+
+#### Vectors
+
+Vectors are zero indexed
+
+```rust
+let v = vec![1, 2, 3, 4, 5];
+
+// panicks
+let does_not_exist = &v[100];
+
+// returns None
+let does_not_exist = v.get(100);
+
+// iteratve over elements
+let v = vec![100, 32, 57];
+for i in &v {
+    println!("{i}");
+}
+
+// iteratve over mutable elements. add 50 to each elements
+// To change the value that the mutable reference refers to, we have to use the * dereference operator to get to the value in i before we can use the += operator. 
+let mut v = vec![100, 32, 57];
+for i in &mut v {
+    *i += 50;
+}
+```
+
+All types in a vector must be the same. We can use enums when types vary since each element would be that enum type
+```rust
+enum SpreadsheetCell {
+    Int(i32),
+    Float(f64),
+    Text(String),
+}
+
+let row = vec![
+    SpreadsheetCell::Int(3),
+    SpreadsheetCell::Text(String::from("blue")),
+    SpreadsheetCell::Float(10.12),
+];
+```
+
+#### Strings
+
+```rust
+let s1 = String::from("tic");
+let s2 = String::from("tac");
+let s3 = String::from("toe");
+
+// concatenate strings
+let s = format!("{s1}-{s2}-{s3}");
+
+//interate over string
+for c in "abcd".chars() {
+    println!("{c}");
+}
+```
+
+#### Hash Maps (dictionaries)
+```rust
+use std::collections::HashMap;
+
+let mut scores = HashMap::new();
+
+scores.insert(String::from("Blue"), 10);
+scores.insert(String::from("Yellow"), 50);
+
+// access element
+let team_name = String::from("Blue");
+let score = scores.get(&team_name).copied().unwrap_or(0);
+
+// loop over
+for (key, value) in &scores {
+    println!("{key}: {value}");
+}
+
+// add value if not exists
+scores.entry(String::from("Green")).or_insert(50);
+```
+
+```rust
+// count number of words using hash map
+use std::collections::HashMap;
+
+let text = "hello world wonderful world";
+
+let mut map = HashMap::new();
+
+for word in text.split_whitespace() {
+    let count = map.entry(word).or_insert(0);
+    *count += 1;
+}
+
+println!("{:?}", map);
+```
+
+By default, HashMap uses a hashing function called [SipHash](https://en.wikipedia.org/wiki/SipHash) that can provide resistance to Denial of Service (DoS) attacks involving hash tables1. This is not the fastest hashing algorithm available, but the trade-off for better security that comes with the drop in performance is worth it. If you profile your code and find that the default hash function is too slow for your purposes, you can switch to another function by specifying a different hasher.
+
+### Error Handling
+```rust
+// force panic
+panic!("forced panic");
+```
+
+```rust
+// handle error
+use std::fs::File;
+
+fn main() {
+    let greeting_file_result = File::open("hello.txt");
+
+    let greeting_file = match greeting_file_result {
+        Ok(file) => file,
+        Err(error) => panic!("Problem opening the file: {:?}", error),
+    };
+}
+
+// another way to handle
+use std::fs::File;
+
+fn main() {
+    let greeting_file = File::open("hello.txt")
+        .expect("hello.txt should be included in this project");
+}
+```
+
+The ? placed after a Result value is defined to work in almost the same way as the match expressions we defined to handle the Result values in Listing 9-6. If the value of the Result is an Ok, the value inside the Ok will get returned from this expression, and the program will continue. If the value is an Err, the Err will be returned from the whole function as if we had used the return keyword so the error value gets propagated to the calling code.
+
+```rust
+use std::fs::File;
+use std::io::{self, Read};
+
+fn read_username_from_file() -> Result<String, io::Error> {
+    let mut username = String::new();
+
+    File::open("hello.txt")?.read_to_string(&mut username)?;
+
+    Ok(username)
+}
+```
+
+```rust
+// read file to string
+use std::fs;
+use std::io;
+
+fn read_username_from_file() -> Result<String, io::Error> {
+    fs::read_to_string("hello.txt")
 }
 ```
